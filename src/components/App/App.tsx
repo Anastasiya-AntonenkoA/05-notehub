@@ -1,0 +1,81 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import css from "./App.module.css";
+import { useDebounce } from "use-debounce";
+import { fetchNotes, createNote, deleteNote } from "../../services/noteService";
+import SearchBox from "../SearchBox/SearchBox";
+import Pagination from "../Pagination/Pagination";
+import NoteList from "../NoteList/NoteList";
+import NoteForm from "../NoteForm/NoteForm";
+import Modal from "../Modal/Modal";
+
+const PER_PAGE = 12;
+
+function App() {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch] = useDebounce(search, 500);
+  const [page, setPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: (newNote: { title: string; content: string; tag: string }) => createNote(newNote),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      setIsModalOpen(false);
+    },
+  });
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["notes", page, debouncedSearch, PER_PAGE],
+    queryFn: () => fetchNotes(page, debouncedSearch, PER_PAGE),
+    placeholderData: (prev) => prev,
+  }); 
+
+  const notes = data?.notes ?? [];
+  const totalPages = data?.totalPages ?? 1;
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteNote(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id);
+  };
+
+  return (
+    <div className={css.app}>
+      <header className={css.toolbar}>
+        <SearchBox value={search} onChange={setSearch} />
+        {totalPages > 1 && (
+          <Pagination
+            total={totalPages}
+            page={page}
+            perPage={PER_PAGE}
+            onChange={setPage}
+          />
+        )}
+        <button onClick={() => setIsModalOpen(true)}>+ Додати нотатку</button>
+      </header>
+
+
+      {isLoading && <p>Loading...</p>}
+      {isError && <p>Error loading notes</p>}
+      <NoteList notes={notes} onDelete={handleDelete} />
+
+      {isModalOpen && (
+        <Modal onClose={() => setIsModalOpen(false)}>
+          <NoteForm
+            onSubmit={(title, content, tag) => createMutation.mutate({ title, content, tag })}
+            onCancel={() => setIsModalOpen(false)}
+          />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+export default App;
