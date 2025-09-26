@@ -52,15 +52,13 @@ function App() {
         <SearchBox value={search} onChange={setSearch} />
         {totalPages > 1 && (
           <Pagination
-            total={totalPages}
+            totalPages={totalPages}
             page={page}
-            perPage={PER_PAGE}
             onChange={setPage}
           />
         )}
-        <button onClick={() => setIsModalOpen(true)}>+ Додати нотатку</button>
+        <button className={css.button} onClick={() => setIsModalOpen(true)}>Create note</button>
       </header>
-
 
       {isLoading && <p>Loading...</p>}
       {isError && <p>Error loading notes</p>}

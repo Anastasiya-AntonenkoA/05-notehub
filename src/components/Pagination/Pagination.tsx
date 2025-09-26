@@ -2,16 +2,13 @@ import ReactPaginate from "react-paginate";
 import css from "./Pagination.module.css";
 
 interface PaginationProps {
-  total: number;
+  totalPages: number;  // Замість total
   page: number;
-  perPage: number;
   onChange: (page: number) => void;
 }
 
-function Pagination({ total, page, perPage, onChange }: PaginationProps) {
-  const pageCount = Math.ceil(total / perPage);
-
-  if (pageCount <= 1) return null;
+function Pagination({ totalPages, page, onChange }: PaginationProps) {
+  if (totalPages <= 1) return null;
 
   return (
     <ReactPaginate
@@ -24,11 +21,12 @@ function Pagination({ total, page, perPage, onChange }: PaginationProps) {
       breakLabel="..."
       nextLabel=">"
       previousLabel="<"
-      pageCount={pageCount}
+      pageCount={totalPages} // тут відразу totalPages
       forcePage={page - 1}
       onPageChange={(event) => onChange(event.selected + 1)}
     />
   );
 }
+
 
 export default Pagination;
