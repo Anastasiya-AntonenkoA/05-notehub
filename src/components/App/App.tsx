@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import css from "./App.module.css";
 import { useDebounce } from "use-debounce";
-import { fetchNotes, deleteNote } from "../../services/noteService";
+import { fetchNotes} from "../../services/noteService";
 import SearchBox from "../SearchBox/SearchBox";
 import Pagination from "../Pagination/Pagination";
 import NoteList from "../NoteList/NoteList";
@@ -16,7 +16,6 @@ function App() {
   const [debouncedSearch] = useDebounce(search, 500);
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["notes", page, debouncedSearch, PER_PAGE],
@@ -26,17 +25,6 @@ function App() {
 
   const notes = data?.notes ?? [];
   const totalPages = data?.totalPages ?? 1;
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteNote(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-    },
-  });
-
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
-  };
 
   const handleSearchChange = (value: string) => {
   setSearch(value);
@@ -59,8 +47,7 @@ function App() {
 
       {isLoading && <p>Loading...</p>}
       {isError && <p>Error loading notes</p>}
-      <NoteList notes={notes} onDelete={handleDelete} />
-
+      <NoteList notes={notes} />
       {isModalOpen && (
         <Modal onClose={() => setIsModalOpen(false)}>
           <NoteForm onCancel={() => setIsModalOpen(false)}/>

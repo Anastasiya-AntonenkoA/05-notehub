@@ -21,7 +21,7 @@ function Pagination({ totalPages, page, onChange }: PaginationProps) {
       breakLabel="..."
       nextLabel=">"
       previousLabel="<"
-      pageCount={totalPages} // тут відразу totalPages
+      pageCount={totalPages}
       forcePage={page - 1}
       onPageChange={(event) => onChange(event.selected + 1)}
     />
