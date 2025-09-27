@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import css from "./App.module.css";
 import { useDebounce } from "use-debounce";
-import { fetchNotes, createNote, deleteNote } from "../../services/noteService";
+import { fetchNotes, deleteNote } from "../../services/noteService";
 import SearchBox from "../SearchBox/SearchBox";
 import Pagination from "../Pagination/Pagination";
 import NoteList from "../NoteList/NoteList";
@@ -17,14 +17,6 @@ function App() {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
-
-  const createMutation = useMutation({
-    mutationFn: (newNote: { title: string; content: string; tag: string }) => createNote(newNote),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      setIsModalOpen(false);
-    },
-  });
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["notes", page, debouncedSearch, PER_PAGE],
@@ -46,10 +38,15 @@ function App() {
     deleteMutation.mutate(id);
   };
 
+  const handleSearchChange = (value: string) => {
+  setSearch(value);
+  setPage(1);
+  };
+
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox value={search} onChange={setSearch} />
+        <SearchBox value={search} onChange={handleSearchChange} />
         {totalPages > 1 && (
           <Pagination
             totalPages={totalPages}
@@ -66,10 +63,7 @@ function App() {
 
       {isModalOpen && (
         <Modal onClose={() => setIsModalOpen(false)}>
-          <NoteForm
-            onSubmit={(title, content, tag) => createMutation.mutate({ title, content, tag })}
-            onCancel={() => setIsModalOpen(false)}
-          />
+          <NoteForm onCancel={() => setIsModalOpen(false)}/>
         </Modal>
       )}
     </div>

@@ -1,25 +1,48 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createNote } from "../../services/noteService";
 import css from "./NoteForm.module.css";
 
 interface NoteFormProps {
-  onSubmit: (title: string, content: string, tag: string) => void;
   onCancel: () => void;
 }
 
+interface NoteFormValues {
+  title: string;
+  content: string;
+  tag: "Todo" | "Work" | "Personal" | "Meeting" | "Shopping";
+}
+
 const validationSchema = Yup.object({
-  title: Yup.string().min(3, "Minimum 3 symbols").max(50, "Maximum 50 symbols").required("Required field"),
+  title: Yup.string()
+    .min(3, "Minimum 3 symbols")
+    .max(50, "Maximum 50 symbols")
+    .required("Required field"),
   content: Yup.string().max(500, "Maximum 500 symbols"),
-  tag: Yup.string().oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"]).required("Required field"),
+  tag: Yup.string()
+    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"])
+    .required("Required field"),
 });
 
-function NoteForm({ onSubmit, onCancel }: NoteFormProps) {
+function NoteForm({ onCancel }: NoteFormProps) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (newNote: { title: string; content: string; tag: string }) =>
+      createNote(newNote),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      onCancel();
+    },
+  });
+
   return (
-    <Formik
+    <Formik<NoteFormValues> 
       initialValues={{ title: "", content: "", tag: "Todo" }}
       validationSchema={validationSchema}
       onSubmit={(values, { resetForm }) => {
-        onSubmit(values.title, values.content, values.tag);
+        mutation.mutate(values);
         resetForm();
       }}
     >
@@ -33,7 +56,13 @@ function NoteForm({ onSubmit, onCancel }: NoteFormProps) {
 
           <div className={css.formGroup}>
             <label htmlFor="content">Content</label>
-            <Field id="content" name="content" as="textarea" rows={8} className={css.textarea} />
+            <Field
+              id="content"
+              name="content"
+              as="textarea"
+              rows={8}
+              className={css.textarea}
+            />
             <ErrorMessage name="content" component="span" className={css.error} />
           </div>
 
@@ -50,11 +79,19 @@ function NoteForm({ onSubmit, onCancel }: NoteFormProps) {
           </div>
 
           <div className={css.actions}>
-            <button type="button" onClick={onCancel} className={css.cancelButton}>
+            <button
+              type="button"
+              onClick={onCancel}
+              className={css.cancelButton}
+            >
               Cancel
             </button>
-            <button type="submit" className={css.submitButton} disabled={isSubmitting}>
-              Create note
+            <button
+              type="submit"
+              className={css.submitButton}
+              disabled={isSubmitting || mutation.isPending}
+            >
+              {mutation.isPending ? "Creating..." : "Create note"}
             </button>
           </div>
         </Form>

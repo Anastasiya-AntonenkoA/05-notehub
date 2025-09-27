@@ -2,7 +2,7 @@ import ReactPaginate from "react-paginate";
 import css from "./Pagination.module.css";
 
 interface PaginationProps {
-  totalPages: number;  // Замість total
+  totalPages: number;
   page: number;
   onChange: (page: number) => void;
 }
